@@ -7,52 +7,28 @@ import random
 from tqdm import tqdm
 
 def read_data_from_db(file_path):
-    file_extension = file_path.split(".")[-1].lower()
-
-    if file_extension == "db":
-        conn = sqlite3.connect(file_path)
-    elif file_extension == "sql":
-        conn = sqlite3.connect(f"file:{file_path}?mode=ro", uri=True)
-    else:
-        print("Invalid file extension. Only .db and .sql files are supported.")
-        return None
-
+    conn = sqlite3.connect(file_path)
+    
     try:
         cursor = conn.cursor()
-
-        # Retrieve all table names from the database
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        table_names = [row[0] for row in cursor.fetchall()]
-
-        if len(table_names) == 0:
+        
+        # Retrieve the first table name from the sqlite_master table
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
+        result = cursor.fetchone()
+        
+        if result is None:
             print("No tables found in the database.")
             conn.close()
             return None
-
-        # Prompt the user to select a table
-        print("Available tables:")
-        for i, name in enumerate(table_names):
-            print(f"{i + 1}. {name}")
-
-        table_index = input("Enter the index of the table you want to read: ")
-
-        try:
-            table_index = int(table_index) - 1
-            if table_index < 0 or table_index >= len(table_names):
-                raise ValueError()
-        except ValueError:
-            print("Invalid table index.")
-            conn.close()
-            return None
-
-        selected_table = table_names[table_index]
-
-        # Read the data from the selected table
-        query = f"SELECT * FROM {selected_table}"
-        data = pd.read_sql(query, conn)
+        
+        table_name = result[0]
+        
+        # Read the data from the retrieved table
+        query = f"SELECT * FROM {table_name}"
+        data = pd.read_sql_query(query, conn)
         conn.close()
         return data
-
+    
     except sqlite3.Error as e:
         print(f"An error occurred while reading the database: {e}")
         return None
@@ -67,6 +43,7 @@ def load_data(path):
             data = pd.read_excel(path)
         elif file_extension in [".db",".sql"]:
             data = read_data_from_db(path)
+
         else:
             raise ValueError(
                 "Unsupported file format. Please provide a CSV, Excel, SQL, or SQLite database file."
@@ -287,7 +264,7 @@ def main():
                 break
             elif choice == 1:
                 try:
-                        type = int(input("\nChoose type:\n1. header\n2. column values: "))
+                        type = int(input("\nChoose type:\n1. header, 2. column values: "))
                         if type == 2:
                             data = preprocessed_data
                         elif type != 1:
@@ -314,7 +291,7 @@ def main():
             elif choice == 2:
                 while True:
                     try:
-                        type = int(input("\nChoose comparison type:\n1. Compare between two headers\n2. Compare between two column values: "))
+                        type = int(input("\nChoose comparison type:\n1. Compare between two headers, 2. Compare between two column values: "))
                         if type == 2:
                             data = preprocessed_data
                         elif type != 1:
@@ -344,7 +321,7 @@ def main():
                         print("Invalid choice. Please try again.")
             elif choice == 3:
                 try:
-                    type = int(input("\nChoose comparison type:\n1. Compare between two headers\n2. Compare between two column values: "))
+                    type = int(input("\nChoose comparison type:\n1. Compare between two headers, 2. Compare between two column values: "))
                     if type == 2:
                         data = preprocessed_data
                     elif type != 1:
@@ -371,7 +348,7 @@ def main():
                     print("Invalid choice. Please try again.")
             elif choice == 4:
                 try:
-                        type = int(input("\nChoose type:\n1. header\n2. column values: "))
+                        type = int(input("\nChoose type:\n1. header, 2. column values: "))
                         if type == 2:
                             data = preprocessed_data
                         elif type != 1:
