@@ -353,7 +353,6 @@ def main():
                             data = preprocessed_data
                         elif type != 1:
                             raise ValueError
-                        break
                 except ValueError:
                         print("Invalid input. Please enter either 1 or 2.")
                         choice = input("Enter 'exit' to quit or press any key to try again: ")
